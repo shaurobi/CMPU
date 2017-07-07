@@ -9,7 +9,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
 app.config['TUNNEL'] = os.environ['TUNNEL']
 app.config['ADMIN'] = os.environ['ADMIN']
-app.config.from_pyfile('config.py')
+#app.config.from_pyfile('config.py')
 db.init_app(app)
 
 
