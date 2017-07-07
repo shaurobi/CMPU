@@ -14,6 +14,6 @@ The tool will:
 
 A config.py file needs to be created under an instance folder with the following variables:
 
-BOTTOKEN = "Spark Bot Token"
-TUNNEL = "web address for Spark to talk to your server"
-ADMIN = 'your spark email address for admin purposes'
+* BOTTOKEN = "Spark Bot Token"
+* TUNNEL = "web address for Spark to talk to your server"
+* ADMIN = 'your spark email address for admin purposes'
