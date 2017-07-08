@@ -1,15 +1,10 @@
 from flask import Flask, request
 import re
-import os
 import requests
 from CTPU.models import db, Person, Partner
 
 app = Flask(__name__, instance_relative_config=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
-app.config['TUNNEL'] = os.environ['TUNNEL']
-app.config['ADMIN'] = os.environ['ADMIN']
-#app.config.from_pyfile('config.py')
+app.config.from_pyfile('config.py')
 db.init_app(app)
 
 
@@ -24,6 +19,28 @@ def sendmessage(header, toPersonEmail, text):
     message = {"roomId": toPersonEmail, "text": text}
     r = requests.post(messageUrl, headers=header, json=message)
     print(r.json)
+
+
+def sendmessageemail(header, toPersonEmail, text):
+    messageUrl = "https://api.ciscospark.com/v1/messages"
+    message = {"toPersonEmail": toPersonEmail, "text": text}
+    r = requests.post(messageUrl, headers=header, json=message)
+    print(r.json)
+
+
+def send_message(webhook, message):
+    header = setHeaders()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    if email == app.config['ADMIN']:
+        messageto = re.search('^(?:\S+\s+){2}(\S+\s+)', message).group(1)
+        print(messageto)
+        messagecontent = re.search('^(?:\S+\s+){3}(.*)', message).group(1)
+        print(messagecontent)
+        sendmessageemail(header, messageto, messagecontent)
+
+    else:
+        sendmessage(header, roomId, "not allowed, sod off")
 
 
 def get_message(header, messageId):
@@ -113,8 +130,11 @@ def listener():
             elif message == 'list registered':
                 list_users(webhook)
                 return 'POST'
+            elif message.startswith("send message"):
+                send_message(webhook, message)
+                return 'POST'
             else:
-                sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that! ")
+                sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
                 return 'POST'
         else:
             return 'go away bot'

@@ -1,6 +1,4 @@
-from CTPU import register_user, sendmessage, unregister_user, list_users, get_message, setHeaders
 from flask import request
-
 
 @app.route('/')
 def hello_world():
