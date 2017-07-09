@@ -1,7 +1,7 @@
 from flask import Flask, request
 import re
 import requests
-from CTPU.models import db, Person, Partner
+from CTPU.models import db, Person, Partner, SendMessage
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py')
@@ -21,7 +21,7 @@ def sendmessage(header, toPersonEmail, text):
     print(r.json)
 
 
-def sendmessageemail(header, toPersonEmail, text):
+def send_message_email(header, toPersonEmail, text):
     messageUrl = "https://api.ciscospark.com/v1/messages"
     message = {"toPersonEmail": toPersonEmail, "text": text}
     r = requests.post(messageUrl, headers=header, json=message)
@@ -37,8 +37,29 @@ def send_message(webhook, message):
         print(messageto)
         messagecontent = re.search('^(?:\S+\s+){3}(.*)', message).group(1)
         print(messagecontent)
-        sendmessageemail(header, messageto, messagecontent)
+        send_message_email(header, messageto, messagecontent)
+    else:
+        sendmessage(header, roomId, "not allowed, sod off")
 
+def send(webhook, message):
+    header = setHeaders()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    if email == app.config['ADMIN']:
+        user = Person.query.filter_by(email=email).first()
+        dbstate = user.messages.first()
+        if dbstate is None:
+            dbstate = SendMessage("inital", user)
+            sendmessage(header, roomId, "What user would you like to send a message to?")
+        elif dbstate['state'] == "inital":
+            dbstate.emailTo = message
+            dbstate.state = "emailadded"
+            sendmessage(header, roomId, "What message would you like to send?")
+        elif dbstate['state'] == "emailadded":
+            dbstate.message = message
+            dbstate.state = "message added"
+            send_message_email(header, dbstate.emailTo, dbstate.message)
+            sendmessage(header, roomId, "Message has been sent?")
     else:
         sendmessage(header, roomId, "not allowed, sod off")
 
@@ -132,6 +153,9 @@ def listener():
                 return 'POST'
             elif message.startswith("send message"):
                 send_message(webhook, message)
+                return 'POST'
+            elif message.startswith("send"):
+                send(webhook, message)
                 return 'POST'
             else:
                 sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")

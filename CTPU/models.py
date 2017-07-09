@@ -7,6 +7,7 @@ class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True)
     partner_id = db.Column(db.Integer, db.ForeignKey('partner.id'))
+    sendmessage_id = db.Column(db.Integer, db.ForeignKey('sendmessage.id'))
 
     def __init__(self, email, partner):
         self.email = email
@@ -28,3 +29,19 @@ class Partner(db.Model):
 
     def __repr__(self):
         return '<Partner %r>' % self.name
+
+
+class SendMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    to = db.Column(db.String(120), unique=True)
+    message = db.Column(db.String(120), unique=True)
+    state = db.Column(db.String(120), unique=True)
+    people = db.relationship('Person', backref='sendmessage', lazy='dynamic')
+
+    def __init__(self, state, person):
+        self.state = state
+        self.people = person
+
+    def __repr__(self):
+        return '<Partner %r>' % self.people
+
