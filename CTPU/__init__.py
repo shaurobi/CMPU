@@ -1,7 +1,7 @@
 from flask import Flask, request
 import re
 import requests
-from CTPU.models import db, Person, Partner, SendMessage
+from CTPU.models import db, Person, Partner, Sendmessage
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py')
