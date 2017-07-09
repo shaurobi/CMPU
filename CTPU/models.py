@@ -31,7 +31,7 @@ class Partner(db.Model):
         return '<Partner %r>' % self.name
 
 
-class SendMessage(db.Model):
+class Sendmessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     to = db.Column(db.String(120), unique=True)
     message = db.Column(db.String(120), unique=True)
