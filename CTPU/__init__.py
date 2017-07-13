@@ -49,7 +49,9 @@ def send(webhook, message):
         user = Person.query.filter_by(email=email).first()
         dbstate = user.messages.first()
         if dbstate is None:
-            dbstate = SendMessage("inital", user)
+            dbstate = Sendmessage("inital", user)
+            db.session.add(dbstate)
+            db.session.commit()
             sendmessage(header, roomId, "What user would you like to send a message to?")
         elif dbstate['state'] == "inital":
             dbstate.emailTo = message
