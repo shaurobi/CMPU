@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 import re
 import os
 import requests
+import string
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py', silent=True)
@@ -172,28 +173,29 @@ def listener():
             print(webhooks['id'])
             roomId = webhooks['data']['roomId']
             message = get_message(header, str(webhooks['data']['id']))
+            command = message.lower()
             print(message)
-            if message.startswith("Cisco"):
-                message = message.partition(' ')[2]
-            if message == 'register':
+            if command.startswith("cisco"):
+                command = message.partition(' ')[2]
+            if command == 'register':
                 register_user(webhooks)
                 return 'POST'
-            elif message == 'unregister':
+            elif command == 'unregister':
                 unregister_user(webhooks)
                 return 'POST'
-            elif message == 'list registered':
+            elif command == 'list registered':
                 list_users(webhooks)
                 return 'POST'
-            elif message.startswith("add partner"):
+            elif command.startswith("add partner"):
                 add_partner(webhooks, message)
                 return 'POST'
-            elif message.startswith("send message"):
+            elif command.startswith("send message"):
                 send_message(webhooks, message)
                 return 'POST'
-            elif message.startswith("send"):
+            elif command.startswith("send"):
                 send(webhooks, message)
                 return 'POST'
-            elif message == 'help':
+            elif command == 'help':
                 sendmessage(header, roomId, "Howdy, \n \n List of commands that may or may not do things: \n\nregister\nunregister\nlist registered\nadd partner\nsend\nsend message\n\nDont break anything ;)")
                 return 'POST'
             else:
