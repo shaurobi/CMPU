@@ -7,6 +7,10 @@ from CTPU.models import db, Person, Partner, Sendmessage
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py', silent=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
+app.config['TUNNEL'] = os.environ['TUNNEL']
+app.config['ADMIN'] = os.environ['ADMIN']
+app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
 db.init_app(app)
 
 
