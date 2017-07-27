@@ -1,6 +1,6 @@
 from flask import Flask, request
 from CTPU.models import db, Person, Partner, Sendmessage
-import re
+import re, os
 import requests
 
 app = Flask(__name__, instance_relative_config=True)
