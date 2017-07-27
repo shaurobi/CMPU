@@ -6,6 +6,8 @@ from CTPU.models import db, Person, Partner, Sendmessage
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py', silent=True)
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
 app.config['TUNNEL'] = os.environ['TUNNEL']
@@ -193,6 +195,7 @@ def send_test():
     sendmessage(header, "sidwyer@cisco.com", "Hey matey")
     return 'sent'
 
+print('about to set header and get hook')
 header = setHeaders()
 webhook = createWebook(header)
 
