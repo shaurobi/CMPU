@@ -154,10 +154,10 @@ def listener():
     header = setHeaders()
     if request.method == 'POST':
         webhooks = request.get_json()
-        print(webhook)
-        print(webhooks['id'])
         if webhook == webhooks['id']:
             if webhooks['data']['personEmail'] != "CTPU@sparkbot.io":
+                print(webhook)
+                print(webhooks['id'])
                 roomId = webhooks['data']['roomId']
                 message = get_message(header, str(webhooks['data']['id']))
                 print(message)
