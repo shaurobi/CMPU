@@ -22,6 +22,7 @@ class Partner(db.Model):
     name = db.Column(db.String(50))
     domain = db.Column(db.String(50))
     people = db.relationship('Person', backref='partner', lazy='dynamic')
+    address = db.Column(db.String(50))
 
     def __init__(self, name, domain):
         self.name = name

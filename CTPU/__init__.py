@@ -1,5 +1,6 @@
 from flask import Flask, request
 from CTPU.models import db, Person, Partner, Sendmessage
+from flask_migrate import Migrate
 import re
 import os
 import requests
@@ -14,6 +15,7 @@ app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['BOTADDRESS'] = os.environ['BOTADDRESS']
 db.init_app(app)
+migrate = Migrate(app, db)
 
 
 def setHeaders():
