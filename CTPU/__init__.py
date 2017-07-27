@@ -1,10 +1,12 @@
 from flask import Flask, request
+import os
 import re
 import requests
 from CTPU.models import db, Person, Partner, Sendmessage
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py', silent=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 db.init_app(app)
 
 
