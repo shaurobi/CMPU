@@ -144,6 +144,9 @@ def listener():
         if webhook['data']['personEmail'] != "CTPU@sparkbot.io":
             roomId = webhook['data']['roomId']
             message = get_message(header, str(webhook['data']['id']))
+            print(message)
+            if message.startswith("Cisco"):
+                message = message.partition(' ')[2]
             if message == 'register':
                 register_user(webhook)
                 return 'POST'
