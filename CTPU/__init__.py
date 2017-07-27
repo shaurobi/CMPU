@@ -12,7 +12,9 @@ app.config['TUNNEL'] = os.environ['TUNNEL']
 app.config['ADMIN'] = os.environ['ADMIN']
 app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['BOTADDRESS'] = os.environ['BOTADDRESS']
 db.init_app(app)
+
 
 def setHeaders():
     accessHdr = 'Bearer ' + app.config['BOTTOKEN']
@@ -164,7 +166,7 @@ def listener():
     header = setHeaders()
     if request.method == 'POST':
         webhooks = request.get_json()
-        if webhooks['data']['personEmail'] != "CTPU@sparkbot.io":
+        if webhooks['data']['personEmail'] != app.config['BOTADDRESS']:
             print(webhooks['id'])
             roomId = webhooks['data']['roomId']
             message = get_message(header, str(webhooks['data']['id']))
