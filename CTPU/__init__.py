@@ -141,6 +141,19 @@ def list_users(webhook):
         for person in company.people.all():
             sendmessage(header, roomId, person.email)
 
+def add_partner(webhook, message):
+    header = setHeaders()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    if email == app.config['ADMIN']:
+        domain = re.search('@.+', message).group()
+        p = Partner(message,message)
+        db.session.add(p)
+        db.session.commit(p)
+        sendmessage(header, roomId, "have added the partner")
+    else:
+        sendmessage(header, roomId, "You shall not passssssss")
+
 
 header = setHeaders()
 createWebook(header)
@@ -166,6 +179,9 @@ def listener():
                 return 'POST'
             elif message == 'list registered':
                 list_users(webhooks)
+                return 'POST'
+            elif message == 'add partner':
+                add_partner(webhooks, message)
                 return 'POST'
             elif message.startswith("send message"):
                 send_message(webhooks, message)
