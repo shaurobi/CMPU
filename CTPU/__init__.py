@@ -182,3 +182,6 @@ def send_test():
     header = setHeaders()
     sendmessage(header, "sidwyer@cisco.com", "Hey matey")
     return 'sent'
+
+header = setHeaders()
+createWebook(header)
