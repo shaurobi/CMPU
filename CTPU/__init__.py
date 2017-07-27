@@ -198,7 +198,7 @@ def listener():
                 return 'POST'
             else:
                 sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
-                message = webhooks['data']['personEmail'] + " sent " + message + "to CTPU"
+                message = webhooks['data']['personEmail'] + " sent '" + message + "' to CTPU"
                 send_message_email(header, "sidwyer@cisco.com", message)
                 return 'POST'
         else:
