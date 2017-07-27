@@ -6,12 +6,12 @@ import requests
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py', silent=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
-app.config['TUNNEL'] = os.environ['TUNNEL']
-app.config['ADMIN'] = os.environ['ADMIN']
-app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+#app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
+#app.config['TUNNEL'] = os.environ['TUNNEL']
+#app.config['ADMIN'] = os.environ['ADMIN']
+#app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 def setHeaders():
@@ -147,7 +147,7 @@ def add_partner(webhook, message):
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
         domain = re.search('@.+', message).group()
-        p = Partner(message,message)
+        p = Partner(domain, domain)
         db.session.add(p)
         db.session.commit()
         sendmessage(header, roomId, "have added the partner")
