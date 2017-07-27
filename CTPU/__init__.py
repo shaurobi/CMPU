@@ -119,6 +119,7 @@ def createWebook(header):
     lwebhook = lwebhook.json()
     print(lwebhook)
     for webhook in lwebhook['items']:
+        print(webhook['id'])
         requests.delete("https://api.ciscospark.com/v1/webhooks/" + webhook['id'], headers=header)
     message = {"name": "All the messages", "targetUrl": app.config['TUNNEL'], "resource": "messages", "event": "created"}
     requests.post(webhookUrl, headers=header, json=message)
