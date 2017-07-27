@@ -180,7 +180,7 @@ def listener():
             elif message == 'list registered':
                 list_users(webhooks)
                 return 'POST'
-            elif message == 'add partner':
+            elif message.startswith("add partner"):
                 add_partner(webhooks, message)
                 return 'POST'
             elif message.startswith("send message"):
