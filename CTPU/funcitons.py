@@ -1,16 +1,7 @@
-from flask import Flask, request
-from CTPU.models import db, Person, Partner, Sendmessage
+from CTPU import app, db
 import re
+from CTPU.models import Person, Partner, Sendmessage
 import requests
-
-app = Flask(__name__, instance_relative_config=True)
-app.config.from_pyfile('config.py', silent=True)
-#app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-#app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
-#app.config['TUNNEL'] = os.environ['TUNNEL']
-#app.config['ADMIN'] = os.environ['ADMIN']
-#app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
-db.init_app(app)
 
 def setHeaders():
     accessHdr = 'Bearer ' + app.config['BOTTOKEN']
@@ -138,39 +129,3 @@ def list_users(webhook):
         company = Partner.query.filter_by(domain=domain).first()
         for person in company.people.all():
             sendmessage(header, roomId, person.email)
-
-
-@app.route('/listen/', methods=['POST'])
-def listener():
-    header = setHeaders()
-    if request.method == 'POST':
-        webhooks = request.get_json()
-        if webhooks['data']['personEmail'] != "CTPU@sparkbot.io":
-            print(webhooks['id'])
-            roomId = webhooks['data']['roomId']
-            message = get_message(header, str(webhooks['data']['id']))
-            print(message)
-            if message.startswith("Cisco"):
-                message = message.partition(' ')[2]
-            if message == 'register':
-                register_user(webhooks)
-                return 'POST'
-            elif message == 'unregister':
-                unregister_user(webhooks)
-                return 'POST'
-            elif message == 'list registered':
-                list_users(webhooks)
-                return 'POST'
-            elif message.startswith("send message"):
-                send_message(webhooks, message)
-                return 'POST'
-            elif message.startswith("send"):
-                send(webhooks, message)
-                return 'POST'
-            else:
-                sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
-                return 'POST'
-        else:
-            return 'go away bot'
-    else:
-        return 'error'

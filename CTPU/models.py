@@ -44,4 +44,3 @@ class Sendmessage(db.Model):
 
     def __repr__(self):
         return '<Partner %r>' % self.people
-
