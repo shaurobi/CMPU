@@ -149,7 +149,7 @@ def add_partner(webhook, message):
         domain = re.search('@.+', message).group()
         p = Partner(message,message)
         db.session.add(p)
-        db.session.commit(p)
+        db.session.commit()
         sendmessage(header, roomId, "have added the partner")
     else:
         sendmessage(header, roomId, "You shall not passssssss")
