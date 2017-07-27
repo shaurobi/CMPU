@@ -1,6 +1,7 @@
 from flask import Flask, request
 from CTPU.models import db, Person, Partner, Sendmessage
-import re, os
+import re
+import os
 import requests
 
 app = Flask(__name__, instance_relative_config=True)
@@ -10,6 +11,7 @@ app.config['BOTTOKEN'] = os.environ['BOTTOKEN']
 app.config['TUNNEL'] = os.environ['TUNNEL']
 app.config['ADMIN'] = os.environ['ADMIN']
 app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 def setHeaders():
