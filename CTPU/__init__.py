@@ -140,6 +140,10 @@ def list_users(webhook):
             sendmessage(header, roomId, person.email)
 
 
+header = setHeaders()
+createWebook(header)
+
+
 @app.route('/listen/', methods=['POST'])
 def listener():
     header = setHeaders()
