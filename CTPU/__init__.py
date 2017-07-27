@@ -14,6 +14,7 @@ app.config['WEBHOOK_SECRET'] = os.environ['WEBHOOK_SECRET']
 db.init_app(app)
 
 
+
 def setHeaders():
     accessHdr = 'Bearer ' + app.config['BOTTOKEN']
     headers = {'Authorization': accessHdr, 'Content-Type': 'application/json; charset=utf-8'}
@@ -122,7 +123,9 @@ def createWebook(header):
         print(webhook['id'])
         requests.delete("https://api.ciscospark.com/v1/webhooks/" + webhook['id'], headers=header)
     message = {"name": "All the messages", "targetUrl": app.config['TUNNEL'], "resource": "messages", "event": "created"}
-    requests.post(webhookUrl, headers=header, json=message)
+    response = requests.post(webhookUrl, headers=header, json=message)
+    response = response.json()
+    return response['id']
 
 
 def list_users(webhook):
@@ -148,33 +151,38 @@ def hello_world():
 def listener():
     header = setHeaders()
     if request.method == 'POST':
-        webhook = request.get_json()
-        if webhook['data']['personEmail'] != "CTPU@sparkbot.io":
-            roomId = webhook['data']['roomId']
-            message = get_message(header, str(webhook['data']['id']))
-            print(message)
-            if message.startswith("Cisco"):
-                message = message.partition(' ')[2]
-            if message == 'register':
-                register_user(webhook)
-                return 'POST'
-            elif message == 'unregister':
-                unregister_user(webhook)
-                return 'POST'
-            elif message == 'list registered':
-                list_users(webhook)
-                return 'POST'
-            elif message.startswith("send message"):
-                send_message(webhook, message)
-                return 'POST'
-            elif message.startswith("send"):
-                send(webhook, message)
-                return 'POST'
+        webhooks = request.get_json()
+        print(webhook)
+        print(webhooks['id'])
+        if webhook == webhooks['id']:
+            if webhooks['data']['personEmail'] != "CTPU@sparkbot.io":
+                roomId = webhooks['data']['roomId']
+                message = get_message(header, str(webhooks['data']['id']))
+                print(message)
+                if message.startswith("Cisco"):
+                    message = message.partition(' ')[2]
+                if message == 'register':
+                    register_user(webhooks)
+                    return 'POST'
+                elif message == 'unregister':
+                    unregister_user(webhooks)
+                    return 'POST'
+                elif message == 'list registered':
+                    list_users(webhooks)
+                    return 'POST'
+                elif message.startswith("send message"):
+                    send_message(webhooks, message)
+                    return 'POST'
+                elif message.startswith("send"):
+                    send(webhooks, message)
+                    return 'POST'
+                else:
+                    sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
+                    return 'POST'
             else:
-                sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
-                return 'POST'
+                return 'go away bot'
         else:
-            return 'go away bot'
+            return 'wrong session'
     else:
         return 'error'
 
@@ -186,4 +194,5 @@ def send_test():
     return 'sent'
 
 header = setHeaders()
-createWebook(header)
+webhook = createWebook(header)
+
