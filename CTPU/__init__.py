@@ -188,9 +188,10 @@ def listener():
             print(message)
             if command.startswith("cisco"):
                 command = message.partition(' ')[2]
-            if user.sendmessage is not None:
-                send(webhooks, message)
-                return 'POST'
+            if user is not None:
+                if user.sendmessage is not None:
+                    send(webhooks, message)
+                    return 'POST'
             elif command == 'register':
                 register_user(webhooks)
                 return 'POST'
