@@ -57,21 +57,31 @@ def send(webhook, message):
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
         user = Person.query.filter_by(email=email).first()
-        dbstate = user.messages.first()
+        print(user)
+        print(user.sendmessage)
+        dbstate = user.sendmessage
         if dbstate is None:
-            dbstate = Sendmessage("inital", user)
+            print("in inital method")
+            dbstate = Sendmessage("inital")
             db.session.add(dbstate)
+            user.sendmessage = dbstate
+            print("about to add session")
+            db.session.add(user)
             db.session.commit()
             sendmessage(header, roomId, "What user would you like to send a message to?")
-        elif dbstate['state'] == "inital":
-            dbstate.emailTo = message
+        elif dbstate.state == "inital":
+            dbstate.to = message
             dbstate.state = "emailadded"
+            db.session.add(dbstate)
+            db.session.commit()
             sendmessage(header, roomId, "What message would you like to send?")
-        elif dbstate['state'] == "emailadded":
+        elif dbstate.state == "emailadded":
             dbstate.message = message
             dbstate.state = "message added"
-            send_message_email(header, dbstate.emailTo, dbstate.message)
-            sendmessage(header, roomId, "Message has been sent?")
+            send_message_email(header, dbstate.to, dbstate.message)
+            sendmessage(header, roomId, "Message has been sent 🤘")
+            db.session.delete(dbstate)
+            db.session.commit()
     else:
         sendmessage(header, roomId, "not allowed, sod off")
 
@@ -173,10 +183,15 @@ def listener():
             roomId = webhooks['data']['roomId']
             message = get_message(header, str(webhooks['data']['id']))
             command = message.lower()
+            email = webhooks['data']['personEmail']
+            user = Person.query.filter_by(email=email).first()
             print(message)
             if command.startswith("cisco"):
                 command = message.partition(' ')[2]
-            if command == 'register':
+            if user.sendmessage is not None:
+                send(webhooks, message)
+                return 'POST'
+            elif command == 'register':
                 register_user(webhooks)
                 return 'POST'
             elif command == 'unregister':
