@@ -34,14 +34,13 @@ class Partner(db.Model):
 
 class Sendmessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    to = db.Column(db.String(120), unique=True)
-    message = db.Column(db.String(120), unique=True)
-    state = db.Column(db.String(120), unique=True)
-    people = db.relationship('Person', backref='sendmessage', lazy='dynamic')
+    to = db.Column(db.String(120))
+    message = db.Column(db.String(120))
+    state = db.Column(db.String(120))
+    person = db.relationship('Person', backref='sendmessage', lazy='dynamic')
 
-    def __init__(self, state, person):
+    def __init__(self, state):
         self.state = state
-        self.people = person
 
     def __repr__(self):
-        return '<Partner %r>' % self.people
+        return '<Message %r>' % self.message
