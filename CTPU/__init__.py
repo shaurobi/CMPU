@@ -94,7 +94,7 @@ def get_message(header, messageId):
     url = "https://api.ciscospark.com/v1/messages/"
     r = requests.get(url + messageId, headers=header)
     r = r.json()
-    return r['markdown']
+    return r['text']
 
 
 def register_user(webhook):
