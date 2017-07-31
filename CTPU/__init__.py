@@ -176,6 +176,25 @@ def add_partner(webhook, message):
     else:
         sendmessage(header, roomId, "You shall not passssssss")
 
+def add_person(webhook, message):
+    header = setHeaders()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    if email == app.config['ADMIN']:
+        print(message)
+        personto = re.search('^(?:\S+\s+){2}(\S+)', message).group(1)
+        print(personto)
+        domain = re.search('@.+', personto).group()
+        print(domain)
+        partner = Partner.query.filter_by(domain=domain).first()
+        print(partner)
+        p = Person(personto, partner)
+        db.session.add(p)
+        db.session.commit()
+        sendmessage(header, roomId, "have added the person")
+    else:
+        sendmessage(header, roomId, "You shall not passssssss")
+
 
 header = setHeaders()
 createWebook(header)
@@ -210,6 +229,9 @@ def listener():
                 return 'POST'
             elif command.startswith("add partner"):
                 add_partner(webhooks, message)
+                return 'POST'
+            elif command.startswith("add person"):
+                add_person(webhooks, message)
                 return 'POST'
             elif command.startswith("send message"):
                 send_message(webhooks, message)
