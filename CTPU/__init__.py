@@ -163,6 +163,19 @@ def list_users(webhook):
         for person in company.people.all():
             sendmessage(header, roomId, person.email)
 
+
+def list_partners(webhook):
+    header = setHeaders()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    if email == app.config['ADMIN']:
+        allpartners = Partner.query.all()
+        for partner in allpartners:
+            sendmessage(header, roomId, partner.domain)
+    else:
+        sendmessage(header, roomId, "You shall not passssssss")
+
+
 def add_partner(webhook, message):
     header = setHeaders()
     email = webhook['data']['personEmail']
@@ -226,6 +239,9 @@ def listener():
                 return 'POST'
             elif command == 'list registered':
                 list_users(webhooks)
+                return 'POST'
+            elif command == 'list partners':
+                list_partners(webhooks)
                 return 'POST'
             elif command.startswith("add partner"):
                 add_partner(webhooks, message)
