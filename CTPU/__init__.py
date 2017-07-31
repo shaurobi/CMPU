@@ -80,7 +80,7 @@ def send(webhook, message):
             db.session.commit()
             sendmessage(header, roomId, "What message would you like to send?")
         elif dbstate.state == "emailadded":
-            dbstate.message = message
+            #dbstate.message = message
             dbstate.state = "message added"
             send_message_email(header, dbstate.to, message)
             sendmessage(header, roomId, "Message has been sent 🤘")
