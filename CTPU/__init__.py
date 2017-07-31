@@ -38,7 +38,7 @@ def send_message_email(header, toPersonEmail, text):
     if toPersonEmail == "all":
         allusers = Person.query.all()
         for person in allusers:
-            message = {"toPersonEmail": person.email, "markdown": text}
+            message = {"toPersonEmail": person.email, "text": text}
             print("sending to" + person.email)
             requests.post(messageUrl, headers=header, json=message)
     else:
@@ -82,7 +82,7 @@ def send(webhook, message):
         elif dbstate.state == "emailadded":
             dbstate.message = message
             dbstate.state = "message added"
-            send_message_email(header, dbstate.to, message)
+            send_message_email(header, dbstate.to, dbstate.message)
             sendmessage(header, roomId, "Message has been sent 🤘")
             db.session.delete(dbstate)
             db.session.commit()
