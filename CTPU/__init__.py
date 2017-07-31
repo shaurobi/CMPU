@@ -35,9 +35,15 @@ def sendmessage(header, toPersonEmail, text):
 
 def send_message_email(header, toPersonEmail, text):
     messageUrl = "https://api.ciscospark.com/v1/messages"
-    message = {"toPersonEmail": toPersonEmail, "text": text}
-    r = requests.post(messageUrl, headers=header, json=message)
-    print(r.json)
+    if toPersonEmail == "all":
+        allusers = Person.query.all()
+        for person in allusers:
+            message = {"toPersonEmail": person.email, "text": text}
+            print("sending to" + person.email)
+            requests.post(messageUrl, headers=header, json=message)
+    else:
+            message = {"toPersonEmail": toPersonEmail, "text": text}
+            requests.post(messageUrl, headers=header, json=message)
 
 
 def send_message(webhook, message):
