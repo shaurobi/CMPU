@@ -38,7 +38,7 @@ def send_message_email(header, toPersonEmail, text):
     if toPersonEmail == "all":
         allusers = Person.query.all()
         for person in allusers:
-            message = {"toPersonEmail": person.email, "text": text}
+            message = {"toPersonEmail": person.email, "markdown": text}
             print("sending to" + person.email)
             requests.post(messageUrl, headers=header, json=message)
     else:
