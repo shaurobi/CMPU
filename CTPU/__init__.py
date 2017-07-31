@@ -52,9 +52,7 @@ def send_message(webhook, message):
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
         messageto = re.search('^(?:\S+\s+){2}(\S+\s+)', message).group(1)
-        print(messageto)
         messagecontent = re.search('^(?:\S+\s+){3}(.*)', message).group(1)
-        print(messagecontent)
         send_message_email(header, messageto, messagecontent)
     else:
         sendmessage(header, roomId, "not allowed, sod off")
@@ -65,8 +63,6 @@ def send(webhook, message):
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
         user = Person.query.filter_by(email=email).first()
-        print(user)
-        print(user.sendmessage)
         dbstate = user.sendmessage
         if dbstate is None:
             print("in inital method")
@@ -86,7 +82,7 @@ def send(webhook, message):
         elif dbstate.state == "emailadded":
             dbstate.message = message
             dbstate.state = "message added"
-            send_message_email(header, dbstate.to, dbstate.message)
+            send_message_email(header, dbstate.to, message)
             sendmessage(header, roomId, "Message has been sent 🤘")
             db.session.delete(dbstate)
             db.session.commit()
@@ -98,7 +94,7 @@ def get_message(header, messageId):
     url = "https://api.ciscospark.com/v1/messages/"
     r = requests.get(url + messageId, headers=header)
     r = r.json()
-    return r['text']
+    return r['markdown']
 
 
 def register_user(webhook):
