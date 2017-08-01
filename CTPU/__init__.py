@@ -42,7 +42,7 @@ def send_message_email(header, toPersonEmail, text):
             print("sending to" + person.email)
             requests.post(messageUrl, headers=header, json=message)
     else:
-            message = {"toPersonEmail": toPersonEmail, "text": text}
+            message = {"toPersonEmail": toPersonEmail, "markdown": text}
             requests.post(messageUrl, headers=header, json=message)
 
 
