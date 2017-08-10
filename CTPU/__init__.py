@@ -1,8 +1,9 @@
 from flask import Flask, request
-from CTPU.models import db, Person, Partner, Sendmessage
+from CTPU.models import db, Person, Partner, Sendmessage, Event
 from flask_migrate import Migrate
 import re
 import os
+from dateutil import parser
 import requests
 
 app = Flask(__name__, instance_relative_config=True)
@@ -20,20 +21,20 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
-def setHeaders():
+def set_headers():
     accessHdr = 'Bearer ' + app.config['BOTTOKEN']
     headers = {'Authorization': accessHdr, 'Content-Type': 'application/json; charset=utf-8'}
     return(headers)
 
 
-def sendmessage(header, toPersonEmail, text):
+def send_message_to_roomid(header, roomID, text):
     messageUrl = "https://api.ciscospark.com/v1/messages"
-    message = {"roomId": toPersonEmail, "text": text}
+    message = {"roomId": roomID, "text": text}
     r = requests.post(messageUrl, headers=header, json=message)
     print(r.json)
 
 
-def send_message_email(header, toPersonEmail, text):
+def send_message_to_email(header, toPersonEmail, text):
     messageUrl = "https://api.ciscospark.com/v1/messages"
     if toPersonEmail == "all":
         allusers = Person.query.all()
@@ -47,18 +48,18 @@ def send_message_email(header, toPersonEmail, text):
 
 
 def send_message(webhook, message):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
         messageto = re.search('^(?:\S+\s+){2}(\S+\s+)', message).group(1)
         messagecontent = re.search('^(?:\S+\s+){3}(.*)', message).group(1)
-        send_message_email(header, messageto, messagecontent)
+        send_message_to_email(header, messageto, messagecontent)
     else:
-        sendmessage(header, roomId, "not allowed, sod off")
+        send_message_to_roomid(header, roomId, "not allowed, sod off")
 
 def send(webhook, message):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
@@ -66,28 +67,63 @@ def send(webhook, message):
         dbstate = user.sendmessage
         if dbstate is None:
             print("in inital method")
-            dbstate = Sendmessage("inital")
+            dbstate = Sendmessage("inital", "send")
             db.session.add(dbstate)
             user.sendmessage = dbstate
             print("about to add session")
             db.session.add(user)
             db.session.commit()
-            sendmessage(header, roomId, "What user would you like to send a message to?")
+            send_message_to_roomid(header, roomId, "What user would you like to send a message to?")
         elif dbstate.state == "inital":
             dbstate.to = message
             dbstate.state = "emailadded"
             db.session.add(dbstate)
             db.session.commit()
-            sendmessage(header, roomId, "What message would you like to send?")
+            send_message_to_roomid(header, roomId, "What message would you like to send?")
         elif dbstate.state == "emailadded":
-            #dbstate.message = message
             dbstate.state = "message added"
-            send_message_email(header, dbstate.to, message)
-            sendmessage(header, roomId, "Message has been sent 🤘")
+            send_message_to_email(header, dbstate.to, message)
+            send_message_to_roomid(header, roomId, "Message has been sent 🤘")
             db.session.delete(dbstate)
             db.session.commit()
     else:
-        sendmessage(header, roomId, "not allowed, sod off")
+        send_message_to_roomid(header, roomId, "not allowed, sod off")
+
+
+def create_event(webhook, message):
+    header = set_headers()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    if email == app.config['ADMIN']:
+        user = Person.query.filter_by(email=email).first()
+        dbstate = user.sendmessage
+        if dbstate is None:
+            print("in inital method")
+            dbstate = Sendmessage("initalevent", "event")
+            db.session.add(dbstate)
+            user.sendmessage = dbstate
+            print("about to add session")
+            db.session.add(user)
+            db.session.commit()
+            send_message_to_roomid(header, roomId, "What would you like this event to be called?")
+        elif dbstate.state == "initalevent":
+            event = Event(message)
+            dbstate.to = message
+            dbstate.state = "nameadded"
+            db.session.add(dbstate)
+            db.session.add(event)
+            db.session.commit()
+            send_message_to_roomid(header, roomId, "What is the date of the event? (2018-05-22)?")
+        elif dbstate.state == "nameadded":
+            event = Event.query.filter_by(name=dbstate.to).first()
+            event.date = parser.parse(message)
+            dbstate.state = "date added"
+            send_message_to_roomid(header, roomId, "Event Added")
+            db.session.delete(dbstate)
+            db.session.add(event)
+            db.session.commit()
+    else:
+        send_message_to_roomid(header, roomId, "not allowed, sod off")
 
 
 def get_message(header, messageId):
@@ -99,7 +135,7 @@ def get_message(header, messageId):
 
 
 def register_user(webhook):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     print(email)
@@ -113,26 +149,26 @@ def register_user(webhook):
         u = Person(str(webhook['data']['personEmail']), partner)
         db.session.add(u)
         db.session.commit()
-        sendmessage(header, roomId, "You have been registered")
+        send_message_to_roomid(header, roomId, "You have been registered")
     else:
-        sendmessage(header, roomId, "You are already registered... eager beaver!")
+        send_message_to_roomid(header, roomId, "You are already registered... eager beaver!")
 
 
 def unregister_user(webhook):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     user = Person.query.filter_by(email=email).first()
     if user is not None:
         db.session.delete(user)
         db.session.commit()
-        sendmessage(header, roomId, "You have been unregistered")
+        send_message_to_roomid(header, roomId, "You have been unregistered")
     else:
-        sendmessage(header, roomId, "You are not registered... maybe you meant to register instead?")
+        send_message_to_roomid(header, roomId, "You are not registered... maybe you meant to register instead?")
     return
 
 
-def createWebook(header):
+def create_webhook(header):
     webhookUrl = "https://api.ciscospark.com/v1/webhooks"
     lwebhook = requests.get("https://api.ciscospark.com/v1/webhooks", headers=header)
     lwebhook = lwebhook.json()
@@ -147,34 +183,34 @@ def createWebook(header):
 
 
 def list_users(webhook):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
         allusers = Person.query.all()
         for person in allusers:
-            sendmessage(header, roomId, person.email)
+            send_message_to_roomid(header, roomId, person.email)
     else:
         domain = re.search('@.+', email).group()
         company = Partner.query.filter_by(domain=domain).first()
         for person in company.people.all():
-            sendmessage(header, roomId, person.email)
+            send_message_to_roomid(header, roomId, person.email)
 
 
 def list_partners(webhook):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
         allpartners = Partner.query.all()
         for partner in allpartners:
-            sendmessage(header, roomId, partner.domain)
+            send_message_to_roomid(header, roomId, partner.domain)
     else:
-        sendmessage(header, roomId, "You shall not passssssss")
+        send_message_to_roomid(header, roomId, "You shall not passssssss")
 
 
 def add_partner(webhook, message):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
@@ -182,12 +218,12 @@ def add_partner(webhook, message):
         p = Partner(domain, domain)
         db.session.add(p)
         db.session.commit()
-        sendmessage(header, roomId, "have added the partner")
+        send_message_to_roomid(header, roomId, "have added the partner")
     else:
-        sendmessage(header, roomId, "You shall not passssssss")
+        send_message_to_roomid(header, roomId, "You shall not passssssss")
 
 def add_person(webhook, message):
-    header = setHeaders()
+    header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
@@ -201,18 +237,18 @@ def add_person(webhook, message):
         p = Person(personto, partner)
         db.session.add(p)
         db.session.commit()
-        sendmessage(header, roomId, "have added the person")
+        send_message_to_roomid(header, roomId, "have added the person")
     else:
-        sendmessage(header, roomId, "You shall not passssssss")
+        send_message_to_roomid(header, roomId, "You shall not passssssss")
 
 
-header = setHeaders()
-createWebook(header)
+header = set_headers()
+create_webhook(header)
 
 
 @app.route('/listen/', methods=['POST'])
 def listener():
-    header = setHeaders()
+    header = set_headers()
     if request.method == 'POST':
         webhooks = request.get_json()
         if webhooks['data']['personEmail'] != app.config['BOTADDRESS']:
@@ -226,8 +262,16 @@ def listener():
             if command.startswith("cisco"):
                 command = message.partition(' ')[2]
             if user is not None and user.sendmessage is not None:
-                send(webhooks, message)
-                return 'POST'
+                print(user.sendmessage.conversationType)
+                if user.sendmessage.conversationType == "send":
+                    print("found converstaion type send")
+                    send(webhooks, message)
+                    return 'POST'
+                elif user.sendmessage.conversationType == "event":
+                    create_event(webhooks, message)
+                    return 'POST'
+                else:
+                    return 'POST'
             elif command == 'register':
                 register_user(webhooks)
                 return 'POST'
@@ -252,13 +296,16 @@ def listener():
             elif command.startswith("send"):
                 send(webhooks, message)
                 return 'POST'
+            elif command.startswith("create event"):
+                create_event(webhooks, message)
+                return 'POST'
             elif command == 'help':
-                sendmessage(header, roomId, "Howdy, \n \n List of commands that may or may not do things: \n\nregister\nunregister\nlist registered\nadd partner\nsend\nsend message\n\nDont break anything ;)")
+                send_message_to_roomid(header, roomId, "Howdy, \n \n List of commands that may or may not do things: \n\nregister\nunregister\nlist registered\nadd partner\nsend\nsend message\n\nDont break anything ;)")
                 return 'POST'
             else:
-                sendmessage(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
+                send_message_to_roomid(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
                 message = webhooks['data']['personEmail'] + " sent '" + message + "' to CTPU"
-                send_message_email(header, "sidwyer@cisco.com", message)
+                send_message_to_email(header, "sidwyer@cisco.com", message)
                 return 'POST'
         else:
             return 'go away bot'
