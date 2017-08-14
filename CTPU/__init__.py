@@ -432,7 +432,19 @@ def listener():
                 list_events(webhooks)
                 return 'POST'
             elif command == 'help':
-                send_message_to_roomid(header, roomId, "Howdy, \n \n List of commands that may or may not do things: \n\nregister\nunregister\nlist registered\nadd partner\nsend\nsend message\n\nDont break anything ;)")
+                send_message_to_roomid(header, roomId, "Howdy, <br><br>List of commands that may or may not do things:<br><br>"
+                                                       "register<br>"
+                                                       "unregister<br>"
+                                                       "list registered<br>"
+                                                       "add partner<br>"
+                                                       "send<br>"
+                                                       "send message<br>"
+                                                       "list events<br>"
+                                                       "register to event<br>"
+                                                       "unregister from event<br>"
+                                                       "create event<br>"
+                                                       "delete event<br><br>"
+                                                       "Dont break anything ;)")
                 return 'POST'
             else:
                 send_message_to_roomid(header, roomId, "Hi there!  You have found the Tasmanian Partner Update bot... well done.  If you are a Cisco Partner just type 'register' and if your email domain matches a partner you will start getting updates! How exciting is that!🤘 ")
