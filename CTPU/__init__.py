@@ -244,7 +244,13 @@ def list_events(webhook):
     if Partner.query.filter_by(domain=domain).first():
         eventList = Event.query.filter_by(audience="Partner").all()
         for event in eventList:
-            eventmessage = '**Event ID:** ' + str(event.id) + '<p>**Event Name:** ' + event.name + '<p>**Event Date** ' + str(event.date) + '<p><p>'
+            eventmessage = '**Event ID:** ' + str(event.id) + \
+                           '<p>**Event Description**' + event.description + \
+                           '<p>**Event Name:** ' + event.name + \
+                           '<p>**Event Date:** ' + str(event.date) + \
+                           '<p>**Event Start Time:**' + str(event.startTime) + \
+                           '<p>**Event Finish Time:**' + str(event.finishTime) + \
+                           '<p> <p>'
             send_message_to_roomid(header, roomId, eventmessage)
     else:
         send_message_to_roomid(header, roomId, "You shall not passssssss")
