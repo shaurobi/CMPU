@@ -60,7 +60,7 @@ class Event(db.Model):
     name = db.Column(db.String(120))
     description = db.Column(db.String(120))
     date = db.Column(db.Date())
-    enrolments = db.relationship('Person', secondary=enrolments, lazy='subquery', backref=db.backref('events', lazy=True))
+    enrolments = db.relationship('Person', secondary=enrolments, lazy='dynamic', backref=db.backref('events', lazy='dynamic'))
     location = db.Column(db.String(120))
     audience = db.Column(db.String(120))
     startTime = db.Column(db.Time())

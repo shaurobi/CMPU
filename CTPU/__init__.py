@@ -31,7 +31,6 @@ def send_message_to_roomid(header, roomID, text):
     messageUrl = "https://api.ciscospark.com/v1/messages"
     message = {"roomId": roomID, "markdown": text}
     r = requests.post(messageUrl, headers=header, json=message)
-    print(r.json)
 
 
 def send_message_to_email(header, toPersonEmail, text):
@@ -40,7 +39,6 @@ def send_message_to_email(header, toPersonEmail, text):
         allusers = Person.query.all()
         for person in allusers:
             message = {"toPersonEmail": person.email, "markdown": text}
-            print("sending to" + person.email)
             requests.post(messageUrl, headers=header, json=message)
     else:
             message = {"toPersonEmail": toPersonEmail, "markdown": text}
@@ -66,11 +64,9 @@ def send(webhook, message):
         user = Person.query.filter_by(email=email).first()
         dbstate = user.sendmessage
         if dbstate is None:
-            print("in inital method")
             dbstate = Sendmessage("inital", "send")
             db.session.add(dbstate)
             user.sendmessage = dbstate
-            print("about to add session")
             db.session.add(user)
             db.session.commit()
             send_message_to_roomid(header, roomId, "What user would you like to send a message to?")
@@ -98,11 +94,9 @@ def create_event(webhook, message):
         user = Person.query.filter_by(email=email).first()
         dbstate = user.sendmessage
         if dbstate is None:
-            print("in inital method")
             dbstate = Sendmessage("initalevent", "event")
             db.session.add(dbstate)
             user.sendmessage = dbstate
-            print("about to add session")
             db.session.add(user)
             db.session.commit()
             send_message_to_roomid(header, roomId, "What would you like this event to be called?")
@@ -154,9 +148,34 @@ def create_event(webhook, message):
         send_message_to_roomid(header, roomId, "not allowed, sod off")
 
 
+def register_to_event(webhook, message):
+    header = set_headers()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    user = Person.query.filter_by(email=email).first()
+    dbstate = user.sendmessage
+    if dbstate is None:
+        list_events(webhook)
+        dbstate = Sendmessage("initalevent", "event register")
+        db.session.add(dbstate)
+        user.sendmessage = dbstate
+        db.session.add(user)
+        db.session.commit()
+        send_message_to_roomid(header, roomId, "What event ID would you like to register with?")
+    elif dbstate.state == "initalevent":
+        eventId = message
+        event = Event.query.filter_by(id=eventId).first()
+        event.enrolments.append(user)
+        dbstate.state = "enrollment happened"
+        db.session.delete(dbstate)
+        db.session.add(event)
+        db.session.commit()
+        send_message_to_roomid(header, roomId, "enrollment worked")
+    else:
+        return 'POST'
+
 def get_message(header, messageId):
     url = "https://api.ciscospark.com/v1/messages/"
-    print(messageId)
     r = requests.get(url + messageId, headers=header)
     r = r.json()
     return r['text']
@@ -166,14 +185,10 @@ def register_user(webhook):
     header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
-    print(email)
     user = Person.query.filter_by(email=email).first()
-    print(user)
     if user is None:
         domain = re.search('@.+', email).group()
-        print(domain)
         partner = Partner.query.filter_by(domain=domain).first()
-        print(partner.domain)
         u = Person(str(webhook['data']['personEmail']), partner)
         db.session.add(u)
         db.session.commit()
@@ -200,9 +215,7 @@ def create_webhook(header):
     webhookUrl = "https://api.ciscospark.com/v1/webhooks"
     lwebhook = requests.get("https://api.ciscospark.com/v1/webhooks", headers=header)
     lwebhook = lwebhook.json()
-    print(lwebhook)
     for webhook in lwebhook['items']:
-        print(webhook['id'])
         requests.delete("https://api.ciscospark.com/v1/webhooks/" + webhook['id'], headers=header)
     message = {"name": "All the messages", "targetUrl": app.config['TUNNEL'], "resource": "messages", "event": "created"}
     response = requests.post(webhookUrl, headers=header, json=message)
@@ -242,16 +255,39 @@ def list_events(webhook):
     roomId = webhook['data']['roomId']
     domain = re.search('@.+', email).group()
     if Partner.query.filter_by(domain=domain).first():
+        user = Person.query.filter_by(email=email).first()
+        events = user.events.all()
+        if events:
+            send_message_to_roomid(header, roomId, "Hi " + email + ", you are registered the following events: <br>")
+            for event in events:
+                message = "- " + event.name + "<br>"
+                send_message_to_roomid(header, roomId, message)
+        print(events)
         eventList = Event.query.filter_by(audience="Partner").all()
-        for event in eventList:
-            eventmessage = '**Event ID:** ' + str(event.id) + \
-                           '<p>**Event Description**' + event.description + \
-                           '<p>**Event Name:** ' + event.name + \
-                           '<p>**Event Date:** ' + str(event.date) + \
-                           '<p>**Event Start Time:**' + str(event.startTime) + \
-                           '<p>**Event Finish Time:**' + str(event.finishTime) + \
-                           '<p> <p>'
-            send_message_to_roomid(header, roomId, eventmessage)
+        print(eventList)
+        send_message_to_roomid(header, roomId, "<br>Upcoming events are : <br> <br>")
+        if not events:
+            for event in eventList:
+                print("ininnerloop - events")
+                eventmessage = '**Event ID:** ' + str(event.id) + '<br>' + \
+                           '**Event Description**: ' + str(event.description) + '<br>' + \
+                           '**Event Name:** ' + event.name + '<br>' + \
+                           '**Event Date:** ' + str(event.date) + '<br>' + \
+                           '**Event Start Time:**' + str(event.startTime) + '<br>' + \
+                           '**Event Finish Time:**' + str(event.finishTime) + '<br><br>'
+                send_message_to_roomid(header, roomId, eventmessage)
+        else:
+            for event in eventList:
+                for registered_event in events:
+                    if registered_event.id != event.id:
+                        print("ininnerloop")
+                        eventmessage = '**Event ID:** ' + str(event.id) + '<br>' + \
+                                            '**Event Description**: ' + str(event.description) + '<br>' + \
+                                            '**Event Name:** ' + event.name + '<br>' + \
+                                            '**Event Date:** ' + str(event.date) + '<br>' + \
+                                            '**Event Start Time:**' + str(event.startTime) + '<br>' + \
+                                            '**Event Finish Time:**' + str(event.finishTime) + '<br><br>'
+                        send_message_to_roomid(header, roomId, eventmessage)
     else:
         send_message_to_roomid(header, roomId, "You shall not passssssss")
 
@@ -274,13 +310,9 @@ def add_person(webhook, message):
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
     if email == app.config['ADMIN']:
-        print(message)
         personto = re.search('^(?:\S+\s+){2}(\S+)', message).group(1)
-        print(personto)
         domain = re.search('@.+', personto).group()
-        print(domain)
         partner = Partner.query.filter_by(domain=domain).first()
-        print(partner)
         p = Person(personto, partner)
         db.session.add(p)
         db.session.commit()
@@ -299,23 +331,22 @@ def listener():
     if request.method == 'POST':
         webhooks = request.get_json()
         if webhooks['data']['personEmail'] != app.config['BOTADDRESS']:
-            print(webhooks['id'])
             roomId = webhooks['data']['roomId']
             message = get_message(header, str(webhooks['data']['id']))
             command = message.lower()
             email = webhooks['data']['personEmail']
             user = Person.query.filter_by(email=email).first()
-            print(message)
             if command.startswith("cisco"):
                 command = message.partition(' ')[2]
             if user is not None and user.sendmessage is not None:
-                print(user.sendmessage.conversationType)
                 if user.sendmessage.conversationType == "send":
-                    print("found converstaion type send")
                     send(webhooks, message)
                     return 'POST'
                 elif user.sendmessage.conversationType == "event":
                     create_event(webhooks, message)
+                    return 'POST'
+                elif user.sendmessage.conversationType == "event register":
+                    register_to_event(webhooks, message)
                     return 'POST'
                 else:
                     return 'POST'
@@ -342,6 +373,9 @@ def listener():
                 return 'POST'
             elif command.startswith("send"):
                 send(webhooks, message)
+                return 'POST'
+            elif command.startswith("register to event"):
+                register_to_event(webhooks, message)
                 return 'POST'
             elif command.startswith("create event"):
                 create_event(webhooks, message)
