@@ -174,6 +174,33 @@ def register_to_event(webhook, message):
     else:
         return 'POST'
 
+
+def unregister_from_event(webhook, message):
+    header = set_headers()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    user = Person.query.filter_by(email=email).first()
+    dbstate = user.sendmessage
+    if dbstate is None:
+        list_events(webhook)
+        dbstate = Sendmessage("initalevent", "event unregister")
+        db.session.add(dbstate)
+        user.sendmessage = dbstate
+        db.session.add(user)
+        db.session.commit()
+        send_message_to_roomid(header, roomId, "What event ID would you like to unregister from?")
+    elif dbstate.state == "initalevent":
+        eventId = message
+        event = Event.query.filter_by(id=eventId).first()
+        event.enrolments.remove(user)
+        dbstate.state = "enrollment happened"
+        db.session.delete(dbstate)
+        db.session.add(event)
+        db.session.commit()
+        send_message_to_roomid(header, roomId, "You have been unregistered from " + event.name)
+    else:
+        return 'POST'
+
 def get_message(header, messageId):
     url = "https://api.ciscospark.com/v1/messages/"
     r = requests.get(url + messageId, headers=header)
@@ -258,10 +285,15 @@ def list_events(webhook):
         user = Person.query.filter_by(email=email).first()
         events = user.events.all()
         if events:
-            send_message_to_roomid(header, roomId, "Hi " + email + ", you are registered the following events: <br>")
+            send_message_to_roomid(header, roomId, "Hi " + email + ", <br> <br>You are registered the following events: <br><br>")
             for event in events:
-                message = "- " + event.name + "<br>"
-                send_message_to_roomid(header, roomId, message)
+                eventmessage = '**Event ID:** ' + str(event.id) + '<br>' + \
+                               '**Event Description**: ' + str(event.description) + '<br>' + \
+                               '**Event Name:** ' + event.name + '<br>' + \
+                               '**Event Date:** ' + str(event.date) + '<br>' + \
+                               '**Event Start Time:**' + str(event.startTime) + '<br>' + \
+                               '**Event Finish Time:**' + str(event.finishTime) + '<br><br>'
+                send_message_to_roomid(header, roomId, eventmessage)
         print(events)
         eventList = Event.query.filter_by(audience="Partner").all()
         print(eventList)
@@ -282,11 +314,11 @@ def list_events(webhook):
                     if registered_event.id != event.id:
                         print("ininnerloop")
                         eventmessage = '**Event ID:** ' + str(event.id) + '<br>' + \
-                                            '**Event Description**: ' + str(event.description) + '<br>' + \
-                                            '**Event Name:** ' + event.name + '<br>' + \
-                                            '**Event Date:** ' + str(event.date) + '<br>' + \
-                                            '**Event Start Time:**' + str(event.startTime) + '<br>' + \
-                                            '**Event Finish Time:**' + str(event.finishTime) + '<br><br>'
+                                        '**Event Name:** ' + event.name + '<br>' + \
+                                        '**Event Description**: ' + str(event.description) + '<br>' + \
+                                        '**Event Date:** ' + str(event.date) + '<br>' + \
+                                        '**Event Start Time:**' + str(event.startTime) + '<br>' + \
+                                        '**Event Finish Time:**' + str(event.finishTime) + '<br><br>'
                         send_message_to_roomid(header, roomId, eventmessage)
     else:
         send_message_to_roomid(header, roomId, "You shall not passssssss")
@@ -348,6 +380,9 @@ def listener():
                 elif user.sendmessage.conversationType == "event register":
                     register_to_event(webhooks, message)
                     return 'POST'
+                elif user.sendmessage.conversationType == "event unregister":
+                    unregister_from_event(webhooks, message)
+                    return 'POST'
                 else:
                     return 'POST'
             elif command == 'register':
@@ -376,6 +411,9 @@ def listener():
                 return 'POST'
             elif command.startswith("register to event"):
                 register_to_event(webhooks, message)
+                return 'POST'
+            elif command.startswith("unregister from event"):
+                unregister_from_event(webhooks, message)
                 return 'POST'
             elif command.startswith("create event"):
                 create_event(webhooks, message)
