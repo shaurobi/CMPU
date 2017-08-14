@@ -29,7 +29,7 @@ def set_headers():
 
 def send_message_to_roomid(header, roomID, text):
     messageUrl = "https://api.ciscospark.com/v1/messages"
-    message = {"roomId": roomID, "text": text}
+    message = {"roomId": roomID, "markdown": text}
     r = requests.post(messageUrl, headers=header, json=message)
     print(r.json)
 
@@ -236,6 +236,19 @@ def list_partners(webhook):
     else:
         send_message_to_roomid(header, roomId, "You shall not passssssss")
 
+def list_events(webhook):
+    header = set_headers()
+    email = webhook['data']['personEmail']
+    roomId = webhook['data']['roomId']
+    domain = re.search('@.+', email).group()
+    if Partner.query.filter_by(domain=domain).first():
+        eventList = Event.query.filter_by(audience="Partner").all()
+        for event in eventList:
+            eventmessage = '**Event ID:** ' + str(event.id) + '<p>**Event Name:** ' + event.name + '<p>**Event Date** ' + str(event.date) + '<p><p>'
+            send_message_to_roomid(header, roomId, eventmessage)
+    else:
+        send_message_to_roomid(header, roomId, "You shall not passssssss")
+
 
 def add_partner(webhook, message):
     header = set_headers()
@@ -326,6 +339,9 @@ def listener():
                 return 'POST'
             elif command.startswith("create event"):
                 create_event(webhooks, message)
+                return 'POST'
+            elif command.startswith("list events"):
+                list_events(webhooks)
                 return 'POST'
             elif command == 'help':
                 send_message_to_roomid(header, roomId, "Howdy, \n \n List of commands that may or may not do things: \n\nregister\nunregister\nlist registered\nadd partner\nsend\nsend message\n\nDont break anything ;)")
