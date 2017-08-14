@@ -163,14 +163,19 @@ def register_to_event(webhook, message):
         db.session.commit()
         send_message_to_roomid(header, roomId, "What event ID would you like to register with?")
     elif dbstate.state == "initalevent":
-        eventId = message
-        event = Event.query.filter_by(id=eventId).first()
-        event.enrolments.append(user)
-        dbstate.state = "enrollment happened"
-        db.session.delete(dbstate)
-        db.session.add(event)
-        db.session.commit()
-        send_message_to_roomid(header, roomId, "enrollment worked")
+        if message == "none":
+            send_message_to_roomid(header, roomId, "No problem 👌. Go about your day")
+            db.session.delete(dbstate)
+            db.session.commit()
+        else:
+            eventId = message
+            event = Event.query.filter_by(id=eventId).first()
+            event.enrolments.append(user)
+            dbstate.state = "enrollment happened"
+            db.session.delete(dbstate)
+            db.session.add(event)
+            db.session.commit()
+            send_message_to_roomid(header, roomId, "You have been registered to event: " + event.name)
     else:
         return 'POST'
 
@@ -188,16 +193,21 @@ def unregister_from_event(webhook, message):
         user.sendmessage = dbstate
         db.session.add(user)
         db.session.commit()
-        send_message_to_roomid(header, roomId, "What event ID would you like to unregister from?")
+        send_message_to_roomid(header, roomId, "What event ID would you like to unregister from? (if none type 'none')")
     elif dbstate.state == "initalevent":
-        eventId = message
-        event = Event.query.filter_by(id=eventId).first()
-        event.enrolments.remove(user)
-        dbstate.state = "enrollment happened"
-        db.session.delete(dbstate)
-        db.session.add(event)
-        db.session.commit()
-        send_message_to_roomid(header, roomId, "You have been unregistered from " + event.name)
+        if message == "none":
+            send_message_to_roomid(header, roomId, "No problem 👌. Go about your day")
+            db.session.delete(dbstate)
+            db.session.commit()
+        else:
+            eventId = message
+            event = Event.query.filter_by(id=eventId).first()
+            event.enrolments.remove(user)
+            dbstate.state = "enrollment happened"
+            db.session.delete(dbstate)
+            db.session.add(event)
+            db.session.commit()
+            send_message_to_roomid(header, roomId, "You have been unregistered from " + event.name)
     else:
         return 'POST'
 
