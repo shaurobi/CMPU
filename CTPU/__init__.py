@@ -118,7 +118,35 @@ def create_event(webhook, message):
             event = Event.query.filter_by(name=dbstate.to).first()
             event.date = parser.parse(message)
             dbstate.state = "date added"
-            send_message_to_roomid(header, roomId, "Event Added")
+            send_message_to_roomid(header, roomId, "What is the start time for the event? (24 hour time)")
+            db.session.add(event)
+            db.session.commit()
+        elif dbstate.state == "date added":
+            event = Event.query.filter_by(name=dbstate.to).first()
+            event.startTime = parser.parse(message)
+            dbstate.state = "start time added"
+            send_message_to_roomid(header, roomId, "What is the finish time for the event? (24 hour time)")
+            db.session.add(event)
+            db.session.commit()
+        elif dbstate.state == "start time added":
+            event = Event.query.filter_by(name=dbstate.to).first()
+            event.finishTime = parser.parse(message)
+            dbstate.state = "finish time added"
+            send_message_to_roomid(header, roomId, "What is the location of the event?")
+            db.session.add(event)
+            db.session.commit()
+        elif dbstate.state == "finish time added":
+            event = Event.query.filter_by(name=dbstate.to).first()
+            event.location = message
+            dbstate.state = "Location Added"
+            send_message_to_roomid(header, roomId, "What is the audiance? (Partner, Customer, Open)")
+            db.session.add(event)
+            db.session.commit()
+        elif dbstate.state == "Location Added":
+            event = Event.query.filter_by(name=dbstate.to).first()
+            event.audience = message
+            dbstate.state = "Event Added"
+            send_message_to_roomid(header, roomId, "Event added 🤘")
             db.session.delete(dbstate)
             db.session.add(event)
             db.session.commit()
