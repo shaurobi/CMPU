@@ -70,4 +70,15 @@ class Event(db.Model):
         self.name = name
 
     def __repr__(self):
-       return '<Event %r>' % self.name
+       return '<Error %r>' % self.name
+
+
+class Responseerror(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    json = db.Column(db.String(50000))
+
+    def __init__(self, json):
+        self.json = json
+
+    def __repr__(self):
+       return '<Error %r>' % self.json

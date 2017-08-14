@@ -1,5 +1,5 @@
 from flask import Flask, request
-from CTPU.models import db, Person, Partner, Sendmessage, Event
+from CTPU.models import db, Person, Partner, Sendmessage, Event, Responseerror
 from flask_migrate import Migrate
 import re
 import os
@@ -27,10 +27,27 @@ def set_headers():
     return(headers)
 
 
+def log_error(response):
+    error = Responseerror(str(response))
+    db.session.add(error)
+    db.session.commit()
+
 def send_message_to_roomid(header, roomID, text):
     messageUrl = "https://api.ciscospark.com/v1/messages"
     message = {"roomId": roomID, "markdown": text}
     r = requests.post(messageUrl, headers=header, json=message)
+    print(r.json())
+    print(r.status_code)
+    while True:
+        if r.status_code == "200":
+            break
+        elif r.status_code == "204":
+            break
+        elif r.status_code == "500":
+            r = requests.post(messageUrl, headers=header, json=message)
+        else:
+            log_error(r.json())
+            break
 
 
 def send_message_to_email(header, toPersonEmail, text):
@@ -39,10 +56,30 @@ def send_message_to_email(header, toPersonEmail, text):
         allusers = Person.query.all()
         for person in allusers:
             message = {"toPersonEmail": person.email, "markdown": text}
-            requests.post(messageUrl, headers=header, json=message)
+            r = requests.post(messageUrl, headers=header, json=message)
+            while True:
+                if r.status_code == "200":
+                    break
+                elif r.status_code == "204":
+                    break
+                elif r.status_code == "500":
+                    r = requests.post(messageUrl, headers=header, json=message)
+                else:
+                    log_error(r.json())
+                    break
     else:
             message = {"toPersonEmail": toPersonEmail, "markdown": text}
-            requests.post(messageUrl, headers=header, json=message)
+            r = requests.post(messageUrl, headers=header, json=message)
+            while True:
+                if r.status_code == "200":
+                    break
+                elif r.status_code == "204":
+                    break
+                elif r.status_code == "500":
+                    r = requests.post(messageUrl, headers=header, json=message)
+                else:
+                    log_error(r.json())
+                    break
 
 
 def send_message(webhook, message):
