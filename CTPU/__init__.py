@@ -5,6 +5,10 @@ import re
 import os
 from dateutil import parser
 import requests
+from rq import Queue
+from CTPU.worker import conn
+
+q = Queue(connection=conn)
 
 app = Flask(__name__, instance_relative_config=True)
 try:
@@ -132,8 +136,8 @@ def send(webhook, message):
             send_message_to_roomid(header, roomId, "What message would you like to send?")
         elif dbstate.state == "emailadded":
             dbstate.state = "message added"
-            send_message_to_email(header, dbstate.to, message)
-            send_message_to_roomid(header, roomId, "Message has been sent 🤘")
+            result = q.enqueue(send_message_to_email, header, dbstate.to, message)
+            send_message_to_roomid(header, roomId, "Message has been queued sent 🤘")
             db.session.delete(dbstate)
             db.session.commit()
     else:
