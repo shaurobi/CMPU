@@ -59,48 +59,49 @@ def send_message_to_roomid(header, roomID, text):
 
 
 def send_message_to_email(header, toPersonEmail, text):
-    messageUrl = "https://api.ciscospark.com/v1/messages"
-    if toPersonEmail == "all":
-        allusers = Person.query.all()
-        for person in allusers:
-            print("sparking " + person.email)
-            message = {"toPersonEmail": person.email, "markdown": text}
-            r = requests.post(messageUrl, headers=header, json=message)
-            print(r.status_code)
-            while True:
-                if r.status_code == 200:
-                    print("code 200")
-                    break
-                elif r.status_code == 204:
-                    print("code 204")
-                    break
-                elif r.status_code == 500:
-                    print("Error 500")
-                    r = requests.post(messageUrl, headers=header, json=message)
-                    continue
-                else:
-                    print("Unknown Error Logged" + str(r.json()))
-                    log_error(r)
-                    break
-    else:
-            message = {"toPersonEmail": toPersonEmail, "markdown": text}
-            r = requests.post(messageUrl, headers=header, json=message)
-            print(r.status_code)
-            while True:
-                if r.status_code == 200:
-                    print("code 200")
-                    break
-                elif r.status_code == 204:
-                    print("code 204")
-                    break
-                elif r.status_code == 500:
-                    print("Error 500")
-                    r = requests.post(messageUrl, headers=header, json=message)
-                    continue
-                else:
-                    print("Unknown Error Logged" + str(r.json()))
-                    log_error(r)
-                    break
+    with app.app_context():
+        messageUrl = "https://api.ciscospark.com/v1/messages"
+        if toPersonEmail == "all":
+            allusers = Person.query.all()
+            for person in allusers:
+                print("sparking " + person.email)
+                message = {"toPersonEmail": person.email, "markdown": text}
+                r = requests.post(messageUrl, headers=header, json=message)
+                print(r.status_code)
+                while True:
+                    if r.status_code == 200:
+                        print("code 200")
+                        break
+                    elif r.status_code == 204:
+                        print("code 204")
+                        break
+                    elif r.status_code == 500:
+                        print("Error 500")
+                        r = requests.post(messageUrl, headers=header, json=message)
+                        continue
+                    else:
+                        print("Unknown Error Logged" + str(r.json()))
+                        log_error(r)
+                        break
+        else:
+                message = {"toPersonEmail": toPersonEmail, "markdown": text}
+                r = requests.post(messageUrl, headers=header, json=message)
+                print(r.status_code)
+                while True:
+                    if r.status_code == 200:
+                        print("code 200")
+                        break
+                    elif r.status_code == 204:
+                        print("code 204")
+                        break
+                    elif r.status_code == 500:
+                        print("Error 500")
+                        r = requests.post(messageUrl, headers=header, json=message)
+                        continue
+                    else:
+                        print("Unknown Error Logged" + str(r.json()))
+                        log_error(r)
+                        break
 
 
 def send_message(webhook, message):
