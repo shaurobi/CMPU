@@ -6,7 +6,7 @@ import os
 from dateutil import parser
 import requests
 from rq import Queue
-from CTPU.worker import conn
+from worker import conn
 
 q = Queue(connection=conn)
 
