@@ -326,12 +326,12 @@ def list_users(webhook):
     if email == app.config['ADMIN']:
         allusers = Person.query.all()
         for person in allusers:
-            send_message_to_roomid(header, roomId, person.email)
+            result = q.enqueue(send_message_to_roomid, header, roomId, person.email)
     else:
         domain = re.search('@.+', email).group()
         company = Partner.query.filter_by(domain=domain).first()
         for person in company.people.all():
-            send_message_to_roomid(header, roomId, person.email)
+            result = q.enqueue(send_message_to_roomid, header, roomId, person.email)
 
 
 def list_partners(webhook):
