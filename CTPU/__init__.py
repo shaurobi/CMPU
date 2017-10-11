@@ -292,6 +292,7 @@ def register_user(webhook):
             db.session.add(u)
             db.session.commit()
             send_message_to_roomid(header, roomId, "You have been registered")
+            result = q.enqueue(send_message_to_email, header, app.config['ADMIN'], "" + str(webhook['data']['personEmail']) + " just registered")
     else:
         send_message_to_roomid(header, roomId, "You are already registered... eager beaver!")
 
