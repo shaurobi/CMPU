@@ -285,10 +285,13 @@ def register_user(webhook):
     if user is None:
         domain = re.search('@.+', email).group()
         partner = Partner.query.filter_by(domain=domain).first()
-        u = Person(str(webhook['data']['personEmail']), partner)
-        db.session.add(u)
-        db.session.commit()
-        send_message_to_roomid(header, roomId, "You have been registered")
+        if partner is None:
+            result = q.enqueue(send_message_to_roomid, header, roomId, "Your are not listed as a Cisco Partner")
+        else:
+            u = Person(str(webhook['data']['personEmail']), partner)
+            db.session.add(u)
+            db.session.commit()
+            send_message_to_roomid(header, roomId, "You have been registered")
     else:
         send_message_to_roomid(header, roomId, "You are already registered... eager beaver!")
 
