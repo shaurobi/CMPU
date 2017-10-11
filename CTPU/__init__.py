@@ -286,7 +286,7 @@ def register_user(webhook):
         domain = re.search('@.+', email).group()
         partner = Partner.query.filter_by(domain=domain).first()
         if partner is None:
-            result = q.enqueue(send_message_to_roomid, header, roomId, "Your are not listed as a Cisco Partner")
+            result = q.enqueue(send_message_to_roomid, header, roomId, "Your are not listed as a Cisco Partner.  If you think this is an error spark sidwyer@cisco.com")
         else:
             u = Person(str(webhook['data']['personEmail']), partner)
             db.session.add(u)
