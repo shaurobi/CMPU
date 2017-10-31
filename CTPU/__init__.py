@@ -27,6 +27,7 @@ migrate = Migrate(app, db)
 
 def is_admin(email):
     admins = app.config['ADMIN']
+    admins = admins.split(",")
     result = False
     for admin in admins:
         if admin == email:
