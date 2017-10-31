@@ -341,8 +341,10 @@ def list_users(webhook):
     roomId = webhook['data']['roomId']
     if is_admin(email):
         allusers = Person.query.all()
+        userList = ""
         for person in allusers:
-            result = q.enqueue(send_message_to_roomid, header, roomId, person.email)
+            userList = userList + '<br>' + person.email
+        result = q.enqueue(send_message_to_roomid, header, roomId, userList)
     else:
         domain = re.search('@.+', email).group()
         company = Partner.query.filter_by(domain=domain).first()
