@@ -25,6 +25,14 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
+def is_admin(email):
+    admins = app.config['ADMIN']
+    result = False
+    for admin in admins:
+        if admin == email:
+            result = True
+    return result
+
 def set_headers():
     accessHdr = 'Bearer ' + app.config['BOTTOKEN']
     headers = {'Authorization': accessHdr, 'Content-Type': 'application/json; charset=utf-8'}
@@ -119,7 +127,7 @@ def send(webhook, message):
     header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
-    if email == app.config['ADMIN']:
+    if is_admin(email):
         user = Person.query.filter_by(email=email).first()
         dbstate = user.sendmessage
         if dbstate is None:
