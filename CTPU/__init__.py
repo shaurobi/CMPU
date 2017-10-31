@@ -158,7 +158,7 @@ def create_event(webhook, message):
     header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
-    if email == app.config['ADMIN']:
+    if is_admin(email):
         user = Person.query.filter_by(email=email).first()
         dbstate = user.sendmessage
         if dbstate is None:
@@ -301,7 +301,10 @@ def register_user(webhook):
             db.session.add(u)
             db.session.commit()
             send_message_to_roomid(header, roomId, "You have been registered")
-            result = q.enqueue(send_message_to_email, header, app.config['ADMIN'], "" + str(webhook['data']['personEmail']) + " just registered")
+            admins = app.config['ADMIN']
+            admins = admins.split(",")
+            for admin in admins:
+                result = q.enqueue(send_message_to_email, header, admin, "" + str(webhook['data']['personEmail']) + " just registered")
     else:
         send_message_to_roomid(header, roomId, "You are already registered... eager beaver!")
 
@@ -336,7 +339,7 @@ def list_users(webhook):
     header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
-    if email == app.config['ADMIN']:
+    if is_admin(email):
         allusers = Person.query.all()
         for person in allusers:
             result = q.enqueue(send_message_to_roomid, header, roomId, person.email)
@@ -351,7 +354,7 @@ def list_partners(webhook):
     header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
-    if email == app.config['ADMIN']:
+    if is_admin(email):
         allpartners = Partner.query.all()
         for partner in allpartners:
             send_message_to_roomid(header, roomId, partner.domain)
@@ -410,7 +413,7 @@ def add_partner(webhook, message):
     header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
-    if email == app.config['ADMIN']:
+    if is_admin(email):
         domain = re.search('@.+', message).group()
         p = Partner(domain, domain)
         db.session.add(p)
@@ -423,7 +426,7 @@ def add_person(webhook, message):
     header = set_headers()
     email = webhook['data']['personEmail']
     roomId = webhook['data']['roomId']
-    if email == app.config['ADMIN']:
+    if is_admin(email):
         personto = re.search('^(?:\S+\s+){2}(\S+)', message).group(1)
         domain = re.search('@.+', personto).group()
         partner = Partner.query.filter_by(domain=domain).first()
