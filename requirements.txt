@@ -22,4 +22,4 @@ rq==0.8.2
 six==1.10.0
 SQLAlchemy==1.1.12
 urllib3==1.21.1
-Werkzeug==0.12.2
+Werkzeug==0.15.3
